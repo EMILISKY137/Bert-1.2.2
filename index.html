@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Bert</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root{
+    --item-blue: #3498db;
+    --badge-green: #27ae60;
+    --undo-orange: #e67e22;
+    --reset-red: #e74c3c;
+    --bg1: #f5f7fa;
+    --bg2: #e6ebf0;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    padding:0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    display:flex;
+    flex-direction:column;
+    transition: background .35s ease, color .35s ease;
+  }
+
+  .buttons {
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    flex-grow:1;
+    padding: 0 10px;
+    box-sizing: border-box;
+  }
+
+  button.menu-btn{
+    position:relative;
+    width:100%;
+    padding:0;
+    border:0;
+    border-radius:10px;
+    background:var(--item-blue);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    line-height:1.2;
+    text-align:center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    cursor:pointer;
+    overflow:hidden;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  button.menu-btn:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,0.10); }
+
+  .counter{
+    position:absolute;
+    top:6px;
+    right:8px;
+    background: var(--badge-green);
+    color:#fff;
+    font-weight:700;
+    font-size:12px;
+    padding:3px 7px;
+    border-radius:999px;
+    display:none;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    transform-origin:center center;
+    transition: transform .12s ease;
+  }
+
+  .total-actions{
+    background:#fff;
+    border-top:1px solid #ddd;
+    padding:10px;
+    box-sizing:border-box;
+  }
+
+  .total-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  #total{
+    font-size:32px;
+    font-weight:800;
+    color:#22303f;
+    margin:0;
+    white-space:nowrap;
+  }
+
+  .actions{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+
+  .actions button{
+    width:60px;
+    height:60px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    border:0;
+    color:#fff;
+    cursor:pointer;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+    transition: transform .12s ease, box-shadow .12s ease;
+    font-size: inherit;
+    line-height:1;
+  }
+  .actions button:active{ transform: translateY(1px); }
+  .actions button:hover{ box-shadow: 0 10px 26px rgba(0,0,0,0.12); }
+
+  .actions button.undo{ background: var(--undo-orange); }
+  .actions button.reset{ background: var(--reset-red); }
+
+  body.dark{
+    background: linear-gradient(180deg, #0b0b0b, #111111);
+    color:#e6eef8;
+  }
+  body.dark .menu-btn{
+    background: #2b4f72;
+    box-shadow: none;
+  }
+  body.dark .total-actions{ background: #111111; }
+  body.dark #total{ color: #e6eef8; }
+  body.dark .counter{ background: #1fa055; }
+  body.dark .actions button.undo{ background: #c1650f; }
+  body.dark .actions button.reset{ background: #b71c1c; }
+
+  #overlay{
+    position:fixed;
+    left:0; right:0; top:0; bottom:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    pointer-events:none;
+  }
+  #overlay.show{
+    display:flex;
+    pointer-events:auto;
+  }
+  .overlay-box{
+    background: rgba(0,0,0,0.75);
+    color:#fff;
+    padding:14px 22px;
+    border-radius:10px;
+    font-weight:800;
+    font-size:20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+
+  @media (max-width:420px){
+    #total{ font-size:26px; }
+    .actions button{ width:52px; height:52px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="buttons" id="menu"></div>
+
+  <div class="total-actions">
+    <div class="total-row">
+      <div id="total">Total: €0.00</div>
+      <div class="actions" aria-label="Acciones">
+        <button class="undo" aria-label="Deshacer" onclick="undo()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="77" height="77">
+            <path d="M12 4V1L8 5l4 4V6c3.3 0 6 2.7 6 6a6 6 0 01-6 6c-1.7 0-3.2-.8-4.2-2H5.1c1.2 2.2 3.5 3.7 6.4 3.9 4.4.3 8-3.3 8-7.7 0-4.4-3.6-8-8-8z"/>
+          </svg>
+        </button>
+        <button class="reset" aria-label="Eliminar" onclick="resetTotal()">
+          <span style="font-size:45px">🗑</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay" aria-hidden="true"><div class="overlay-box">Dark Mode ON</div></div>
+
+<script>
+const items = [
+  {name:"PFAND", price:2},
+  {name:"FASSBIER / GREY GOOSE", price:5.5},
+  {name:"BEER / CIDER / RED BULL", price:5},
+  {name:"WEIZEN", price:6},
+  {name:"WEIN", price:6.5},
+  {name:"PROSECCO", price:7},
+  {name:"PROSECCO RB", price:9.5},
+  {name:"APEROL SP", price:8.5},
+  {name:"WASSER / LUFT / MEX", price:3.5},
+  {name:"PEPSI / SAFT / MIO", price:4.5},
+  {name:"SHOTS / SAFTSCHORLE", price:4},
+  {name:"LONG DRINKS", price:10},
+  {name:"JÄGER / VODKA RB", price:11},
+  {name:"VODKA RB GREY GOOSE", price:12.5}
+];
+
+let total = 0;
+let history = [];
+
+const secretCode = ["PFAND","PFAND","DESHACER","ELIMINAR"];
+let seq = [];
+
+const menuDiv = document.getElementById('menu');
+const overlay = document.getElementById('overlay');
+
+items.forEach((it, idx) => {
+  const b = document.createElement('button');
+  b.className = 'menu-btn';
+  b.innerHTML = `${it.name}<br><span style="font-weight:700;margin-top:6px">€${it.price.toFixed(2)}</span>`;
+
+  const badge = document.createElement('span');
+  badge.className = 'counter';
+  badge.id = `counter-${idx}`;
+  b.appendChild(badge);
+
+  b.addEventListener('click', ()=> {
+    addItem(it, idx);
+    registerAction(it.name);
+  });
+  menuDiv.appendChild(b);
+});
+
+function adjustButtonHeights(){
+  const btns = document.querySelectorAll('.menu-btn');
+  if(!btns.length) return;
+  const cols = 2;
+  const rows = Math.ceil(btns.length / cols);
+  const available = document.querySelector('.buttons').clientHeight;
+  const gap = 6;
+  const rowH = Math.max(60, Math.floor((available - (rows-1)*gap)/rows));
+  btns.forEach(b=> b.style.height = rowH + 'px');
+}
+window.addEventListener('resize', adjustButtonHeights);
+window.addEventListener('load', ()=>{ adjustButtonHeights(); updateTotal(); });
+
+function addItem(item, idx){
+  total = +(total + item.price).toFixed(2);
+  history.push({item, idx});
+  updateTotal();
+
+  const badge = document.getElementById(`counter-${idx}`);
+  let c = parseInt(badge.textContent.replace('+','')) || 0;
+  c++;
+  badge.textContent = `+${c}`;
+  badge.style.display = 'inline-block';
+}
+
+function undo(){
+  registerAction("DESHACER");
+  if(history.length === 0) return;
+  const last = history.pop();
+  total = +(total - last.item.price).toFixed(2);
+  updateTotal();
+
+  const badge = document.getElementById(`counter-${last.idx}`);
+  let c = parseInt(badge.textContent.replace('+','')) || 0;
+  c = Math.max(0, c-1);
+  if(c === 0){ badge.style.display = 'none'; badge.textContent = ''; }
+  else { badge.textContent = `+${c}`; }
+}
+
+function resetTotal(){
+  registerAction("ELIMINAR");
+  total = 0;
+  history = [];
+  updateTotal();
+  document.querySelectorAll('.counter').forEach(b=>{ b.style.display='none'; b.textContent=''; });
+}
+
+function updateTotal(){ document.getElementById('total').textContent = `Total: €${total.toFixed(2)}`; }
+
+function registerAction(action){
+  seq.push(action);
+  if(seq.length > secretCode.length) seq.shift();
+  if(JSON.stringify(seq) === JSON.stringify(secretCode)){
+    const dark = document.body.classList.toggle('dark');
+    overlay.querySelector('.overlay-box').textContent = dark ? 'Dark Mode ON' : 'Dark Mode OFF';
+    showOverlay();
+    seq = [];
+  }
+}
+
+function showOverlay(){
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden','false');
+  setTimeout(()=> {
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+  }, 3000);
+}
+</script>
+</body>
+</html>
